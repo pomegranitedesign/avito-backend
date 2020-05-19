@@ -2,6 +2,7 @@ const express = require('express')
 const chalk = require('chalk')
 const path = require('path')
 const fs = require('fs')
+const uuid = require('uuid').v4
 
 const PORT = process.env.PORT || 4000
 const app = express()
@@ -70,33 +71,77 @@ app.get('/ads', async (req, res) => {
 	})
 })
 
+// @Route
+// @Public
+// Desc -> GET a single ad
 app.get('/ads/:id', (req, res) => {
 	const paramID = +req.params.id
-	const hasDesc = req.query.hasDesc
-	const hasAllImages = req.query.hasAllImages
+	const hasDesc = req.query.hasDesc === 'true'
+	const hasAllImages = req.query.hasAllImages === 'true'
+
+	console.log(chalk.yellowBright.bold(`⏳ Receiving ad with id: ${paramID}`))
 
 	fs.readFile(filePath, (error, data) => {
 		if (error) res.json({ error })
 
 		const parsedData = JSON.parse(data)
-
-		const ad = parsedData.find(
-			({ title, id, price, images, description }) => {
-				if (paramID === id) {
-					return {
-						title,
-						price,
-						images: hasAllImages ? images : images[0],
-						description: hasDesc && description
-					}
-				}
-			}
-		)
-
+		const ad = parsedData.find((ad) => ad.id === paramID)
 		if (!ad) res.json({ error: 'Ad not found...' }).status(404)
 
-		res.json({ ad })
+		const finalOutput = {
+			id: ad.id,
+			title: ad.title,
+			price: ad.price
+		}
+
+		if (hasDesc) finalOutput.description = ad.description
+
+		if (hasAllImages) finalOutput.images = ad.images
+		else finalOutput.image = ad.images[0]
+
+		res.json({ finalOutput })
+		console.log(chalk.greenBright.bold(`✅ Get an ad with id: ${paramID}`))
 	})
+})
+
+// @Route
+// @Public
+// Desc -> POST a new ad
+app.post('/ads', (req, res) => {
+	console.log(chalk.yellowBright.bold('⏳ Posting a new ad'))
+
+	// Get all upcoming data from body
+	const { title, price, description, images } = req.body
+
+	// Generate an id
+	const newID = uuid()
+
+	// Validation
+	const error = {}
+	if (!title) error.title = 'Title must be included'
+	else if (!price) error.price = 'Price must be included'
+
+	if (title.length > 200) error.title = "Title's max length is 200 characters"
+	else if (description.length > 1000)
+		error.description = "Description's max length is 1000 characters"
+
+	if (!images) error.images = 'At least one image must be included'
+	else if (images.length > 3)
+		error.images = 'Maximum of 3 image URLs are allowed'
+
+	const output = {
+		id: newID,
+		title,
+		price,
+		description,
+		images
+	}
+
+	if (error.title || error.description || error.price || error.images)
+		return res.send(error).status(403)
+
+	res.json({ id: newID, status: 200 }).status(200)
+	console.log(chalk.greenBright.bold(`✅ New ad created`))
 })
 
 app.listen(PORT, () =>

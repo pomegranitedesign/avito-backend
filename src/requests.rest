@@ -1,3 +1,17 @@
 # GET http://localhost:4000/ads?page=1
 # GET http://localhost:4000/ads?page=1&sortBy=dateCreated&sortDirection=desc
-GET http://localhost:4000/ads/2?hasDesc
+# GET http://localhost:4000/ads/2?hasDesc=true&hasAllImages=true
+
+POST http://localhost:4000/ads
+Content-Type: application/json
+
+{
+  "title": "Hello World",
+  "price": 2000,
+  "description": "his is a cool description",
+  "images": [
+    "https://www.pngitem.com/pimgs/m/7-76597_transparent-red-sports-car-png-lightning-mcqueen-cars.png",
+    "https://www.pngitem.com/pimgs/m/7-76597_transparent-red-sports-car-png-lightning-mcqueen-cars.png",
+    "https://www.pngitem.com/pimgs/m/7-76597_transparent-red-sports-car-png-lightning-mcqueen-cars.png"
+  ]
+}
